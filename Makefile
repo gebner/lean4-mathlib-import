@@ -13,6 +13,8 @@ OBJS = $(SRCS:.lean=.olean)
 OBJS2 = $(SRCS:.lean=.o)
 CS = $(SRCS:.lean=.c)
 
+export LEAN_PATH = Import=$(PWD)
+
 SHELL = /usr/bin/env bash -eo pipefail
 
 .PHONY: all clean
@@ -28,7 +30,6 @@ depends: $(DEPS)
 %.olean: %.lean %.depend $(MORE_DEPS)
 	@echo "[    ] Building $<"
 	@mkdir -p $(*D)
-	env LEAN_PATH=import=$(PWD) \
 	$(LEAN) $(OPTS) --make --c="$*.c.tmp" $<
 # create the .c file atomically
 	mv "$*.c.tmp" "$*.c"
