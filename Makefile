@@ -6,7 +6,7 @@ LEANC ?= leanc
 # Even though we copy the sources into a new directory for stage2/3, we
 # read the list of files to compile from the original directory to avoid
 # issues with stale copied files
-SRCS = $(shell find . -name '*.lean' | grep -v '\#')
+SRCS = ExportParser.lean Import.lean Main.lean OldRecursor.lean
 DEPS = $(SRCS:.lean=.depend)
 OPTS = 
 OBJS = $(SRCS:.lean=.olean)
@@ -17,7 +17,7 @@ export LEAN_PATH = Import=$(PWD)
 
 SHELL = /usr/bin/env bash -eo pipefail
 
-.PHONY: all clean
+.PHONY: all clean emacs
 
 all: $(OBJS) import
 
@@ -25,16 +25,15 @@ depends: $(DEPS)
 
 %.depend: %.lean
 # use separate assignment to ensure failure propagation
-	@deps=`$(LEAN) --deps $< | python relative.py`; echo $(<:.lean=.olean): $$deps > $@
+	deps=`$(LEAN) --deps $< | python relative.py`; echo $(<:.lean=.olean): $$deps > $@
 
 %.olean: %.lean %.depend $(MORE_DEPS)
-	@echo "[    ] Building $<"
-	@mkdir -p $(*D)
+	mkdir -p $(*D)
 	$(LEAN) $(OPTS) --make --c="$*.c.tmp" $<
 # create the .c file atomically
 	mv "$*.c.tmp" "$*.c"
 # make sure the .olean file is newer than the .depend file to prevent infinite make cycles
-	@touch $@
+	touch $@
 
 %.c: %.olean
 	@
@@ -42,19 +41,26 @@ depends: $(DEPS)
 LEANC_OPTS = -O3
 
 %.o: %.c
-	@echo "[    ] Building $<"
-	@mkdir -p "$(@D)"
+	mkdir -p "$(@D)"
 	$(LEANC) -c -o $@ $< $(LEANC_OPTS)
 
 %.S: %.c
-	@mkdir -p "$(@D)"
+	mkdir -p "$(@D)"
 	$(LEANC) -S -o $@ $< $(LEANC_OPTS)
 
 import: $(OBJS2)
 	$(LEANC) -o $@ $+ $(LEANC_OPTS)
 
+LEAN_INIT_PATH=$(shell echo 'import Init.Lean def main (args : List String) : IO UInt32 := do sp <- Lean.getBuiltinSearchPath; IO.println (sp.find! "Init"); pure 0' | lean --run --stdin)
+
+Mathlib.olean: import export.txt
+	env LEAN_PATH=$(LEAN_PATH):Init=$(LEAN_INIT_PATH) ./$+ $@
+
 clean:
 	$(RM) $(DEPS) $(OBJS) $(CS) $(OBJS2)
+
+emacs:
+	emacs
 
 .PRECIOUS: %.depend %.c
 
