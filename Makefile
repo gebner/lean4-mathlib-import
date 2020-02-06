@@ -19,7 +19,7 @@ SHELL = /usr/bin/env bash -eo pipefail
 
 .PHONY: all clean emacs
 
-all: $(OBJS) import
+all: $(OBJS) import Mathlib.olean
 
 depends: $(DEPS)
 
