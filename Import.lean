@@ -139,6 +139,23 @@ let s := s.unchanged `implies;
 let s := s.unchanged `implies.trans;
 s
 
+def max (a b : UInt32) : UInt32 :=
+if a >= b then a else b
+
+def getMaxHeight (env : Environment) : Expr → UInt32
+| Expr.const n ls _ =>
+  match env.find? n with
+  | some (ConstantInfo.defnInfo { hints := ReducibilityHints.regular d, .. }) => d
+  | _ => 0
+| Expr.lam n d b _ => max (getMaxHeight d) (getMaxHeight b)
+| Expr.forallE n d b _ => max (getMaxHeight d) (getMaxHeight b)
+| Expr.letE n d v b _ => max (max (getMaxHeight d) (getMaxHeight v)) (getMaxHeight b)
+| Expr.app a b _ => max (getMaxHeight a) (getMaxHeight b)
+| Expr.mdata _ a _ => getMaxHeight a
+| Expr.proj _ _ a _ => getMaxHeight a
+| _ => 0
+
+-- TODO FIXME TODO
 private def myAddDecl (env : Environment) (decl : Declaration) : Environment :=
 match Environment.addDecl env decl with
 | Except.error (err : KernelException) =>
@@ -171,11 +188,13 @@ match d with
       type := r defn.type,
       ..defn
     }
-  else
+  else do
+    env ← liftM Meta.getEnv;
     StateT.lift $ addDecl $ Declaration.defnDecl {
       name := f defn.name,
       type := r defn.type,
       value := r defn.value,
+      hints := ReducibilityHints.regular (getMaxHeight env (r defn.value) + 1),
       ..defn
     }
 | Declaration.inductDecl lps nps [ind] iu => do

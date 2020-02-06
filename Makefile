@@ -54,7 +54,7 @@ import: $(OBJS2)
 LEAN_INIT_PATH=$(shell echo 'import Init.Lean def main (args : List String) : IO UInt32 := do sp <- Lean.getBuiltinSearchPath; IO.println (sp.find! "Init"); pure 0' | lean --run --stdin)
 
 Mathlib.olean: import export.txt
-	env LEAN_PATH=$(LEAN_PATH):Init=$(LEAN_INIT_PATH) ./$+ $@
+	env LEAN_PATH=$(LEAN_PATH):Init=$(LEAN_INIT_PATH) time -v ./$+ $@
 
 clean:
 	$(RM) $(DEPS) $(OBJS) $(CS) $(OBJS2)
