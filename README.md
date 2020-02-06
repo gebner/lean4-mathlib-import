@@ -22,3 +22,9 @@ make
 make emacs    # install the lean4 emacs package yourself!
 ```
 (If you're on NixOS, you might need to run everything inside `nix-shell ~/lean4`.)
+
+After that, you can import mathlib and play with it in Lean 4:
+```lean
+import Import.Mathlib
+#check (deriv : (real → real) → (real → real))
+```
