@@ -3,4 +3,5 @@
 *.o
 *.olean
 /export.txt
+/attrs.txt
 /import

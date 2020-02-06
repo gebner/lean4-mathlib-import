@@ -16,6 +16,13 @@ end Lean.Declaration
 
 open Lean
 
+unsafe def Lean.Environment.addAttribute'' (env : Environment) (declName : Name) (attrName : Name) (args : Syntax := Syntax.missing) (persistent := true) : Except IO.Error Environment :=
+unsafeIO $ env.addAttribute declName attrName args persistent
+
+@[implementedBy Lean.Environment.addAttribute'']
+constant Lean.Environment.addAttribute' (env : Environment) (declName : Name) (attrName : Name) (args : Syntax := Syntax.missing) (persistent := true) : Except IO.Error Environment :=
+arbitrary _
+
 namespace Lean.Expr
 open Lean.Expr
 
@@ -137,6 +144,8 @@ let s := s.unchanged `std.priority.max;
 let s := s.unchanged `std.priority.default;
 let s := s.unchanged `implies;
 let s := s.unchanged `implies.trans;
+let s := s.unchanged `flip;
+let s := s.rename `optional `optional3;
 s
 
 def max (a b : UInt32) : UInt32 :=
@@ -164,6 +173,14 @@ match Environment.addDecl env decl with
 
 def addDecl (decl : Declaration) : MetaM Unit :=
 modify $ fun s => { env := myAddDecl s.env decl, ..s }
+
+def addAttr' (decl : Name) (attr : Name) : MetaM Unit :=
+modify $ fun s => {
+  env :=
+    match s.env.addAttribute' decl attr with
+    | Except.error err => @panic _ ⟨s.env⟩ (toString err)
+    | Except.ok env => env,
+  ..s }
 
 def processDecl (d : Declaration) : StateT ImportState MetaM Unit := do
 s ← StateT.get;
@@ -216,5 +233,14 @@ match d with
    | _ => pure ();
    pure ()
 | _ => panic! (toString d.names)
+
+def addAttr (decl attr : Name) : StateT ImportState MetaM Unit := do
+s ← StateT.get;
+let decl := s.newNames.findD decl decl;
+env ← StateT.lift $ Meta.getEnv;
+when (env.contains decl) $
+when (attr == `class || attr == `instance) $ do
+liftM $ Meta.dbgTrace (decl, attr);
+liftM $ addAttr' decl attr
 
 end ImportState
