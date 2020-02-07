@@ -192,10 +192,17 @@ match d with
   StateT.lift $ Meta.dbgTrace defn.name;
   isProp ← StateT.lift $ Meta.isProp (r defn.type);
   if s.ignored.contains defn.name then pure ()
-  else if isProp then
+  else if defn.name == `free_abelian_group.semigroup._proof_1 || defn.name == `std.priority.max.equations._eqn_1 then
     StateT.lift $ addDecl $ Declaration.axiomDecl {
       name := f defn.name,
       type := r defn.type,
+      ..defn
+    }
+  else if isProp then
+    StateT.lift $ addDecl $ Declaration.thmDecl {
+      name := f defn.name,
+      type := r defn.type,
+      value := Task.pure $ r defn.value,
       ..defn
     }
   else do
