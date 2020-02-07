@@ -26,17 +26,10 @@ arbitrary _
 namespace Lean.Expr
 open Lean.Expr
 
-def replaceConstNames (f : Name → Name) : Expr → Expr
-| e@(lam n d b _)     => e.updateLambdaE! (replaceConstNames d) (replaceConstNames b)
-| e@(forallE n d b _) => e.updateForallE! (replaceConstNames d) (replaceConstNames b)
-| e@(letE n t v b _)  => e.updateLet! (replaceConstNames t) (replaceConstNames v) (replaceConstNames b)
-| e@(app f a _)       => e.updateApp (replaceConstNames f) (replaceConstNames a) rfl
-| e@(proj _ _ s _)    => e.updateProj (replaceConstNames s) rfl
-| e@(mdata _ b _)     => e.updateMData (replaceConstNames b) rfl
-| e@(const n us _)    => if f n == n then e else mkConst (f n) us
-| e@(sort u _)        => e
-| localE _ _ _ _      => unreachable!
-| e => e
+def replaceConstNames (f : Name → Name) (e : Expr) : Expr :=
+e.replace $ fun e => match e with
+| e@(const n us _) => if f n == n then none else mkConst (f n) us
+| _ => none
 
 end Lean.Expr
 
