@@ -114,6 +114,7 @@ let s := s.rename `coe `coe3;
 let s := s.rename `failure `failure3;
 let s := s.rename `timeit `timeit3;
 let s := s.align `inhabited `Inhabited;
+let s := s.align `inhabited.default `Inhabited.default;
 let s := s.align `inhabited.mk `Inhabited.mk;
 let s := s.align `inhabited.rec `Inhabited.rec;
 let s := s.align `nonempty `Nonempty;
