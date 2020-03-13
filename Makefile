@@ -59,6 +59,14 @@ Mathlib.olean: import export.txt attrs.txt
 clean:
 	$(RM) $(DEPS) $(OBJS) $(CS) $(OBJS2)
 
+export.txt attrs.txt:
+	leanproject get mathlib || true
+	cd mathlib; bash ./scripts/rm_all.sh || true
+	cd mathlib; bash ./scripts/mk_all.sh
+	cd mathlib; env -u LEAN_PATH lean --make src/all.lean
+	cd mathlib; env -u LEAN_PATH lean src/all.lean --export=../export.txt
+	cd mathlib; env -u LEAN_PATH lean ../list_attrs.lean 2>../attrs.txt
+
 emacs:
 	emacs
 
